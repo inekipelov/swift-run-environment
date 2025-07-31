@@ -12,18 +12,10 @@ let package = Package(
         .watchOS(.v2)
     ],
     products: [
-        .library(
-            name: "RunEnvironment",
-            targets: ["RunEnvironment"]),
+        .library(name: "RunEnvironment", targets: ["RunEnvironment"]),
     ],
     targets: [
-        .target(
-            name: "RunEnvironment",
-            dependencies: [],
-            path: "Sources"),
-        .testTarget(
-            name: "RunEnvironmentTests",
-            dependencies: ["RunEnvironment"],
-            path: "Tests"),
+        .target(name: "RunEnvironment", dependencies: [], path: "Sources"),
+        .testTarget(name: "RunEnvironmentTests", dependencies: ["RunEnvironment"], path: "Tests"),
     ]
 )

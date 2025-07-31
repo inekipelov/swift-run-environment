@@ -29,12 +29,21 @@ case .appStore:
 if RunEnvironment.current == .production {
     enableAnalytics()
 }
+
+// Checking reviewing process
+if RunEnvironment.current.underReview {
+    captureReviewerActions()
+} 
+// or like alternative way
+RunEnvironemnt.current.onReview {
+    captureReviewerActions()
+}
 ```
 
 ## Installation
 
 ```swift
 dependencies: [
-    .package(url: "https://github.com/inekipelov/swift-run-environment.git", from: "0.1.0")
+    .package(url: "https://github.com/inekipelov/swift-run-environment.git", from: "0.2.0")
 ]
 ```

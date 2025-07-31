@@ -59,6 +59,8 @@ public enum RunEnvironment: String, CaseIterable {
     ///
     /// Provides a semantic alias for `.testFlight` that emphasizes the
     /// sandboxed nature of TestFlight builds.
+    /// - Warning:
+    /// This alias is not same as Notification Environment `sandbox`
     ///
     /// ```swift
     /// if RunEnvironment.current == .sandbox {
@@ -119,7 +121,7 @@ public enum RunEnvironment: String, CaseIterable {
 #else
         let bundle = Bundle.main
         if #available(macOS 15.0, iOS 18.0, watchOS 11.0, tvOS 18.0, *) {
-            // Nothing that the app store receipt URL is not available on this platform versions
+            // Note: App Store receipt URL is not available on these platform versions
         } else {
             guard let url = bundle.appStoreReceiptURL else {
                 return .debug
@@ -157,4 +159,99 @@ extension RunEnvironment: CustomStringConvertible {
     ///
     /// - Returns: The string representation of the environment
     public var description: String { rawValue }
+}
+
+// MARK: - Reactive like methods
+extension RunEnvironment {
+    @discardableResult
+    public func onDebug(_ closure: () throws -> Void) rethrows -> RunEnvironment {
+        if self == .debug {
+            try closure()
+        }
+        return self
+    }
+    @discardableResult
+    public func onDebug(_ closure: (RunEnvironment) throws -> Void) rethrows -> RunEnvironment {
+        if self == .debug {
+            try closure(self)
+        }
+        return self
+    }
+
+    @discardableResult
+    public func onTestFlight(_ closure: () throws -> Void) rethrows -> RunEnvironment {
+        if self == .testFlight {
+            try closure()
+        }
+        return self
+    }
+    @discardableResult
+    public func onTestFlight(_ closure: (RunEnvironment) throws -> Void) rethrows -> RunEnvironment {
+        if self == .testFlight {
+            try closure(self)
+        }
+        return self
+    }
+
+    @discardableResult
+    public func onAppStore(_ closure: () throws -> Void) rethrows -> RunEnvironment {
+        if self == .appStore {
+            try closure()
+        }
+        return self
+    }
+    @discardableResult
+    public func onAppStore(_ closure: (RunEnvironment) throws -> Void) rethrows -> RunEnvironment {
+        if self == .appStore {
+            try closure(self)
+        }
+        return self
+    }
+}
+
+// MARK: - Reviewing
+extension RunEnvironment {
+    /// Indicates if the app is currently under review. This is determined by specific environment variables that are set during the app review process.
+    ///
+    /// [LinkedIn Original Post](https://www.linkedin.com/posts/ihormalovanyi_xcode-iosdeveloper-swift-activity-7350928940967821313-ISJm?utm_source=share&utm_medium=member_desktop&rcm=ACoAAB5wItMB9qxBB_nU7GXf73JvMnHmnZJd49M)
+    public var underReview: Bool {
+        let processInfo = ProcessInfo.processInfo
+        let environment = processInfo.environment
+        
+        // Check for specific review-time environment variables
+        return environment["CFNETWORK_DIAGNOSTICS"] != nil ||
+               environment["CFNETWORK_HAR_LOGGING"] != nil
+    }
+
+    /// Executes the provided closure if the app is currently under review.
+    /// This allows you to conditionally run code that should only execute during the app review process.
+    ///
+    /// ## Examples
+    /// ```swift
+    /// RunEnvironment.current.onReview {
+    ///     // Code to execute during app review
+    ///     print("App is under review")
+    /// }
+    /// ```
+    ///
+    /// - Parameter closure: The closure to execute if the app is under review
+    /// - Throws: Rethrows any error thrown by the closure
+    @discardableResult
+    public func onReview(_ closure: () throws -> Void) rethrows -> RunEnvironment {
+        if underReview {
+            try closure()
+        }
+        return self
+    }
+    @discardableResult
+    public func onReview(_ closure: (RunEnvironment) throws -> Void) rethrows -> RunEnvironment {
+        if underReview {
+            try closure(self)
+        }
+        return self
+    }
+}
+
+public func ~=(witness: KeyPath<RunEnvironment, Bool>, value: RunEnvironment) -> Bool {
+    return value[keyPath: witness]
 }
