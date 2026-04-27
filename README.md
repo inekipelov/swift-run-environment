@@ -1,15 +1,17 @@
 # RunEnvironment
 
-[![Swift Version](https://img.shields.io/badge/Swift-5.6+-orange.svg)](https://swift.org/)
-[![SPM](https://img.shields.io/badge/SPM-compatible-brightgreen.svg)](https://swift.org/package-manager/)
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Swift Tests](https://github.com/inekipelov/swift-run-environment/actions/workflows/swift.yml/badge.svg)](https://github.com/inekipelov/swift-run-environment/actions/workflows/swift.yml)  
-[![iOS](https://img.shields.io/badge/iOS-9.0+-blue.svg)](https://developer.apple.com/ios/)
-[![macOS](https://img.shields.io/badge/macOS-10.13+-white.svg)](https://developer.apple.com/macos/)
-[![tvOS](https://img.shields.io/badge/tvOS-9.0+-black.svg)](https://developer.apple.com/tvos/)
-[![watchOS](https://img.shields.io/badge/watchOS-2.0+-orange.svg)](https://developer.apple.com/watchos/)
+`RunEnvironment` is a lightweight Swift Package for runtime environment detection.
 
-Runtime environment detection for Swift apps.
+It provides a small typed API to distinguish `debug`, `testFlight`, and `appStore`
+runtime contexts, plus convenience helpers for review-time checks and conditional execution.
+
+<p align="center">
+  <a href="https://swift.org"><img src="https://img.shields.io/badge/Swift-5.6+-F05138?logo=swift&logoColor=white" alt="Swift 5.6+"></a>
+  <a href="https://developer.apple.com/ios/"><img src="https://img.shields.io/badge/iOS-9.0+-CAFC63?logo=apple" alt="iOS 9.0+"></a>
+  <a href="https://developer.apple.com/macos/"><img src="https://img.shields.io/badge/macOS-10.13+-CAFC63?logo=apple" alt="macOS 10.13+"></a>
+  <a href="https://developer.apple.com/tvos/"><img src="https://img.shields.io/badge/tvOS-9.0+-CAFC63?logo=apple" alt="tvOS 9.0+"></a>
+  <a href="https://developer.apple.com/watchos/"><img src="https://img.shields.io/badge/watchOS-2.0+-CAFC63?logo=apple" alt="watchOS 2.0+"></a>
+</p>
 
 ## Usage
 
@@ -25,25 +27,42 @@ case .appStore:
     print("Production")
 }
 
-// Aliases
 if RunEnvironment.current == .production {
     enableAnalytics()
 }
 
-// Checking reviewing process
+RunEnvironment.current
+    .onTestFlight {
+        enableBetaLogging()
+    }
+    .onAppStore {
+        enableFullAnalytics()
+    }
+
 if RunEnvironment.current.underReview {
     captureReviewerActions()
-} 
-// or like alternative way
-RunEnvironemnt.current.onReview {
+}
+
+RunEnvironment.current.onReview {
     captureReviewerActions()
 }
 ```
 
 ## Installation
 
+Add the package to your `Package.swift` dependencies:
+
 ```swift
-dependencies: [
-    .package(url: "https://github.com/inekipelov/swift-run-environment.git", from: "0.2.0")
-]
+.package(url: "https://github.com/inekipelov/swift-run-environment.git", from: "0.2.0")
+```
+
+Then add `RunEnvironment` to your target dependencies:
+
+```swift
+.target(
+    name: "YourTarget",
+    dependencies: [
+        "RunEnvironment"
+    ]
+)
 ```
