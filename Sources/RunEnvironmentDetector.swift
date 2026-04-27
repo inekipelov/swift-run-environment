@@ -16,24 +16,26 @@ public protocol RunEnvironmentDetector {
 struct BundleEnvironmentDetector: RunEnvironmentDetector {
     let bundle: Bundle
 
+    /// Runtime TestFlight detection references:
+    /// - Receipt-based heuristic:
+    ///   https://stackoverflow.com/a/26113597
+    /// - macOS signing OID approach:
+    ///   https://gist.github.com/lukaskubanek/cbfcab29c0c93e0e9e0a16ab09586996
     var runEnvironment: RunEnvironment {
 #if DEBUG
         return .debug
 #elseif targetEnvironment(simulator)
         return .debug
 #else
-        if bundle.isMacOSTestFlightSigned {
+        if bundle.hasTestFlightSigningMarker {
             return .testFlight
         }
 
-        if let url = bundle.appStoreReceiptURL {
-            let filename = url.lastPathComponent.lowercased()
-            if filename == "sandboxreceipt" || filename.contains("sandboxreceipt") {
-                return .testFlight
-            }
+        if bundle.isSandboxReceipt {
+            return .testFlight
         }
 
-        if bundle.path(forResource: "embedded", ofType: "mobileprovision") != nil {
+        if bundle.hasEmbeddedMobileProvision {
             return .testFlight
         }
 
@@ -43,11 +45,26 @@ struct BundleEnvironmentDetector: RunEnvironmentDetector {
 }
 
 private extension Bundle {
+    var isSandboxReceipt: Bool {
+        guard let receiptURL = appStoreReceiptURL else {
+            return false
+        }
+
+        let filename = receiptURL.lastPathComponent.lowercased()
+        return filename == "sandboxreceipt" || filename.contains("sandboxreceipt")
+    }
+
+    var hasEmbeddedMobileProvision: Bool {
+        path(forResource: "embedded", ofType: "mobileprovision") != nil
+    }
+}
+
+private extension Bundle {
     /// Detects whether a macOS app bundle is signed as a TestFlight build.
     ///
     /// Reference:
     /// https://gist.github.com/lukaskubanek/cbfcab29c0c93e0e9e0a16ab09586996
-    var isMacOSTestFlightSigned: Bool {
+    var hasTestFlightSigningMarker: Bool {
 #if os(macOS) && canImport(Security)
         // Build a static-code object for this bundle so Security can evaluate
         // signing requirements against the app's existing signature on disk.
@@ -73,8 +90,6 @@ private extension Bundle {
         // the requirement above under default validation flags.
         return SecStaticCodeCheckValidity(code, [], requirement) == errSecSuccess
 #else
-        // This check is macOS-specific by design; other platforms use
-        // receipt/provisioning heuristics in RunEnvironment.current.
         return false
 #endif
     }
